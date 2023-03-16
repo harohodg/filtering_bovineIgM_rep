@@ -134,7 +134,39 @@ Yes, yes there are. I suspect these are some of the dimer/trimer/etc sequences
 ```
 
 `seqkit grep --by-name --pattern 'forwardPrimer_0mismatches:read=815:ch=305' forwardPrimer_0mismatches.fastq.gz  | grep 'AGATGAACCCACTGTGGACC'`
-Yep, the forward primer is showing up in 4 places. Ah, but that read label also shows up twice. Hmm.
+Yep, the forward primer is showing up in 4 places. Ah, but that read label also shows up twice. Hmm. This means that read and ch values insufficient for unique read identification.
 
-We might be able to get around that with a different regex (although that won't work for mismatches >= 1) or just filtering by min/max sequence length.
+For the 0 mismatch case we can further filter to remove sequences where the forward primer shows up multiple times.
+`../../SCRIPTS/seqkit_filter_sequences.sh -i ./forwardPrimer_0mismatches.fastq.gz '.*?AGATGAACCCACTGTGGACC.*?AGATGAACCCACTGTGGACC.*' | gzip --best --stdout > forwardPrimer_0mismatches-single_copy.fastq.gz`
+```
+seqkit_filter_sequences.sh version 1.1.0
+Running seqkit/2.3.1 with
+module load StdEnv/2020 seqkit/2.3.1  && seqkit grep --threads 1 --invert-match --use-regexp  --by-seq --only-positive-strand  --immediate-output --line-width 0 --pattern '.*?AGATGAACCCACTGTGGACC.*?AGATGAACCCACTGTGGACC.*'  ./forwardPrimer_0mismatches.fastq.gz
+DONE running seqkit
+```
+
+`seqkit stats forwardPrimer_0mismatches.fastq.gz forwardPrimer_0mismatches-single_copy.fastq.gz`
+```
+file                                            format  type  num_seqs      sum_len  min_len  avg_len  max_len
+forwardPrimer_0mismatches.fastq.gz              FASTQ   DNA    240,909  229,075,500      138    950.9    4,968
+forwardPrimer_0mismatches-single_copy.fastq.gz  FASTQ   DNA    236,775  221,307,414      138    934.7    3,813
+```
+
+And now to see if we still have multiple sequences with the same header
+`zgrep '^@' forwardPrimer_0mismatches-single_copy.fastq.gz | sort | uniq -c  | sort --reverse --numeric-sort | head`
+```
+      3 @forwardPrimer_0mismatches:read=983:ch=480
+      3 @forwardPrimer_0mismatches:read=88:ch=360
+      3 @forwardPrimer_0mismatches:read=84:ch=264
+      3 @forwardPrimer_0mismatches:read=83:ch=94
+      3 @forwardPrimer_0mismatches:read=594:ch=459
+      3 @forwardPrimer_0mismatches:read=536:ch=265
+      3 @forwardPrimer_0mismatches:read=479:ch=285
+      3 @forwardPrimer_0mismatches:read=465:ch=45
+      3 @forwardPrimer_0mismatches:read=448:ch=405
+      3 @forwardPrimer_0mismatches:read=447:ch=45
+```
+
+
+Looks like we need to include the first bit of the header. The bit that looks like `1132370c-6612-44fb-ab2d-0247a1f133d8`, or at least a portion of it to ensure we have a unique read label.
 

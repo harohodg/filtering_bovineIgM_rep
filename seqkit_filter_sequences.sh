@@ -16,17 +16,19 @@
 #    Version 1.0 : March 13, 2023
 #        - functional code with minimal error checking
 #
-#To Do
-#   - add flags for min and max length
+#   Version 1.1 : March 16, 2023
+#       - added flags for filtering by min/max length
 
-VERSION='1.0.0'
+
+VERSION='1.1.0'
 DEFAULT_THREADS=${SLURM_JOB_CPUS_PER_NODE:-1}
 
 >&2 echo "seqkit_filter_sequences.sh version $VERSION"
 
 # Echo usage if something isn't right.
 usage() { 
-    echo "Usage: $0 [-d] [-t numThreads (default=$DEFAULT_THREADS)] [-i (invert match)] [-m maxMismatches] [-r (reverse complement output)] [-p searchPattern -P replacementPattern ] <inputFile.fasta/fastq> <searchPattern>" 1>&2; 
+    echo "Usage: $0 [-d] [-m maxMismatches] [-l min_length] [-n max_length] [-t numThreads (default=$DEFAULT_THREADS)] [-i (invert match)]  [-r (reverse complement output)] [-p searchPattern -P replacementPattern ] <inputFile.fasta/fastq> <searchPattern>" 1>&2;
+    echo "Use -l and -h to set min and max length of sequences" 1>&2; 
     echo "Use -d to print what would have been run but not actually run it" 1>&2;
     echo "If not on a compute node the default number of threads is 1."     1>&2;
     echo "Use -i to invert the match (ie print all sequences that don't match)" 1>&2;
@@ -38,7 +40,7 @@ usage() {
 }
 
 
-while getopts ":drip:P:t:m:" o; do
+while getopts ":drip:P:t:m:l:n:" o; do
     case "${o}" in
         d)  
             debug=1
@@ -66,9 +68,23 @@ while getopts ":drip:P:t:m:" o; do
             numThreads="$OPTARG"
             re='^[0-9]+$'
             if ! [[ $numThreads =~ $re ]] ; then
-               echo "error: number of threads is not a number" >&2; exit 1
+               echo "error: number of threads (${numThreads}) is not a number" >&2; exit 1
+            fi
+            ;; 
+        l)
+            minLength="$OPTARG"
+            re='^[0-9]+$'
+            if ! [[ $minLength =~ $re ]] ; then
+               echo "error: min sequence length (${minLength}) is not a number" >&2; exit 1
             fi
             ;;  
+        n)
+            maxLength="$OPTARG"
+            re='^[0-9]+$'
+            if ! [[ $maxLength =~ $re ]] ; then
+               echo "error: max sequence length (${maxLength}) is not a number" >&2; exit 1
+            fi
+            ;;   
         \?)
             echo "ERROR: Invalid option -$OPTARG" >&2
             usage
@@ -104,6 +120,9 @@ fi
 moduleLoad='module load StdEnv/2020 seqkit/2.3.1'
 numThreads=${numThreads:-$DEFAULT_THREADS}
 invertMatchFlag=${invert:+"--invert-match"}
+minLengthFlag=${minLength:+"--min-len ${minLength}"}
+maxLengthFlag=${maxLength:+"--max-len ${maxLength}"}
+headerReplacementFlags=${pattern:+"--pattern '${pattern}' --replacement '${replacement}'"}
 if [ -n "$misMatches" ];then
     mismatchesFlag="--max-mismatch ${misMatches}"
 else
@@ -111,9 +130,11 @@ else
 fi
  
 grepCommand=$(printf " && seqkit grep --threads %d %s %s %s --by-seq --only-positive-strand  --immediate-output --line-width 0 --pattern '%s'  %s " "${numThreads}" "${invertMatchFlag}" "${regexFlag}" "${mismatchesFlag}" "${searchPattern}" "${inputFile}")
-if [ -n "$pattern" ] && [ -n "$replacement" ]; then
-    replaceHeader=$(printf "| seqkit replace --threads %d --pattern '%s' --replacement '%s' --line-width 0" "${numThreads}" "${pattern}" "${replacement}")
+if [ -n "$pattern" ] || [ -n "$minLengthFlag" ] || [ -n "$maxLengthFlag" ]; then
+    replaceHeader=$(printf "| seqkit replace --threads %d %s %s %s --line-width 0" "${numThreads}" "${headerReplacementFlags}" "${minLengthFlag}" "${maxLengthFlag}")
 fi
+
+
 if [ -n "$reverse" ];then
     reverseComplement=$(printf '| seqkit seq --threads %d --reverse --complement --seq-type DNA --line-width 0' "${numThreads}")
 fi
