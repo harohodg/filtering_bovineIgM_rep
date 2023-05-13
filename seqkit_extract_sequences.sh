@@ -16,10 +16,13 @@
 #    Version 1.0 : March 13, 2023
 #        - functional code with minimal error checking
 #
+#    Version 1.1 : May 13, 2023
+#        - fixed bug with regex patterns not being wrapped in single quotes
+#
 #To Do
 #   - add flags for min/max length filter
 
-VERSION='1.0.0'
+VERSION='1.0.1'
 DEFAULT_THREADS=${SLURM_JOB_CPUS_PER_NODE:-1}
 DEFAULT_SEPARTOR="\t"
 
@@ -98,7 +101,7 @@ fi
 
 
 #jobCommand=$(printf $'%s && seqkit locate --threads %d --immediate-output %s --only-positive-strand %s %s --line-width 0 --pattern \'%s\' %s %s | awk -v OFS=\'%s\' \'{ if (NR == 1) {print $1,$2,$3,$4,$5,$6,"length",$7}  else {print $1,$2,$3,$4,$5,$6,$6-$5+1,$7}}\'' "${moduleLoad}" "${numThreads}" "${greedyFlag}" "${regexFlag}" "${mismatchesFlag}" "${searchPattern}" "${inputFile}" "${separator}")
-jobCommand="${moduleLoad} && seqkit locate --threads ${numThreads} --immediate-output ${greedyFlag} ${regexFlag} ${mismatchesFlag} --only-positive-strand --pattern ${searchPattern} ${inputFile} | awk -v OFS='${separator}'"$' \'{ if (NR == 1) { {print $1,$2,$3,$4,$5,$6,"length",$7} } else {print $1,$2,$3,$4,$5,$6,$6-$5+1,$7} }\' '
+jobCommand="${moduleLoad} && seqkit locate --threads ${numThreads} --immediate-output ${greedyFlag} ${regexFlag} ${mismatchesFlag} --only-positive-strand --pattern '${searchPattern}' ${inputFile} | awk -v OFS='${separator}'"$' \'{ if (NR == 1) { {print $1,$2,$3,$4,$5,$6,"length",$7} } else {print $1,$2,$3,$4,$5,$6,$6-$5+1,$7} }\' '
 
 if [ -n "$debug" ];then
     echo "$jobCommand"
