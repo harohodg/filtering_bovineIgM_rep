@@ -1,14 +1,39 @@
-### A nextflow workflow for characterizing bovine immunological nanopore sequencing data
-This workflow has been tested on [Graham](https://docs.alliancecan.ca/wiki/Graham) but should work on any of the other [Digital Research Alliance of Canada](https://alliancecan.ca/en) systems or any system with [Nextflow](https://www.nextflow.io/docs/latest/index.html) and [Seqkit](https://bioinf.shenwei.me/seqkit/) installed. 
+### Nextflow workflows for characterizing bovine immunological nanopore sequencing data
+This workflow has been tested on [Graham](https://docs.alliancecan.ca/wiki/Graham) but should work on any of the other [Digital Research Alliance of Canada](https://alliancecan.ca/en) systems. With a bit of editing these scripts should be able to run on any system with [Nextflow](https://www.nextflow.io/docs/latest/index.html) and [Fastqc](), [Fastp]() and [Seqkit](https://bioinf.shenwei.m) installed. 
 
-
-
-## For a single data-set
+1. Check quality and trim sequences using [Fastqc]() and [Fastp]()
+Assuming you've put the basecalled files in `~/projects/${SLURM_ACCOUNT}/bovine_nanopore_data` and that you are currently in a folder that you want all the results in.
 ```
-#Assuming this is an interactive job and have set INPUT_FILE AND OUTPUT_DIR
-module load StdEnv/2020 nextflow/23.04.3 seqkit/2.3.1
+export SCRIPTS_DIR="somewhere"
 
-NXF_WORK=$SLURM_TMPDIR/work nextflow run ~/projects/def-dhodgins/SCRIPTS/IgM_filtering.nf --input_file $INPUT_FILE  --output_dir $OUTPUT_DIR
-#If you want the temporary results in the current folder remove the NXF_WORK=$SLURM_TMPDIR/work
+module load meta-farm/1.0.2
+
+farm_init.run fastqc_fastp-farm
+
+find ~/projects/${SLURM_ACCOUNT}/bovine_nanopore_data -name '*.fastq.gz' | parallel --dry-run 'NXF_WORK=$SLURM_TMPDIR/work nextflow run '${SCRIPTS_DIR}'/fastqc_and_fastp.nf --input_file {}  --output_dir '$(pwd)/'$(echo "{/.}" | sed "s/.fastq//")_results' > fastqc_fastp-farm/table.dat
+
+eval cp ${SCRIPTS_DIR}/fastqc_and_fastp-job_script.sh fastqc_fastp-farm/job_script.sh
+eval cp ${SCRIPTS_DIR}/single_case.sh fastqc_fastp-farm/single_case.sh
+
+cd fastqc_fastp-farm && submit.run 4
 ```
 
+
+
+2. Run filtering pipeline on each fastp trimmed file.
+Same assumptions as before.
+```
+cd ..
+farm_init.run IgM_filtering-farm
+
+find bc*/fastp -name 'bc*trimmed.fastq.gz' | parallel --dry-run 'NXF_WORK=$SLURM_TMPDIR/work nextflow run '${SCRIPTS_DIR}'/IgM_filtering.nf --input_file '$(pwd)'/{}  --output_dir '$(pwd)/'$(echo "{/.}" | sed "s/-trimmed.fastq//")_results' > IgM_filtering-farm/table.dat
+
+eval cp ${SCRIPTS_DIR}/IgM_filtering-job_script.sh IgM_filtering-farm/job_script.sh
+eval cp ${SCRIPTS_DIR}/single_case.sh IgM_filtering-farm/single_case.sh
+
+cd IgM_filtering-farm && submit.run 4 
+```
+
+
+Use query.run inside fastqc_fastp-farm to check on overall jobs status
+If you have a choice of which def-account_name to use when you submit jobs you can over ride the default one for the meta-farms by submitting with `submit.run 4 '--account def-other_account'`
