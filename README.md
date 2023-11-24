@@ -1,7 +1,7 @@
 ### Nextflow workflows for characterizing bovine immunological nanopore sequencing data
-This workflow has been tested on [Graham](https://docs.alliancecan.ca/wiki/Graham) but should work on any of the other [Digital Research Alliance of Canada](https://alliancecan.ca/en) systems. With a bit of editing these scripts should be able to run on any system with [Nextflow](https://www.nextflow.io/docs/latest/index.html) and [Fastqc](), [Fastp]() and [Seqkit](https://bioinf.shenwei.m) installed. 
+This workflow has been tested on [Graham](https://docs.alliancecan.ca/wiki/Graham) but should work on any of the other [Digital Research Alliance of Canada](https://alliancecan.ca/en) systems. With a bit of editing these scripts should be able to run on any system with [Nextflow](https://www.nextflow.io/docs/latest/index.html) and [Fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Fastp](https://github.com/OpenGene/fastp) and [Seqkit](https://bioinf.shenwei.m) installed. 
 
-1. Check quality and trim sequences using [Fastqc]() and [Fastp]()
+1. Check quality and trim sequences using Fastqc and Fastp
 Assuming you've put the basecalled files in `~/projects/${SLURM_ACCOUNT}/bovine_nanopore_data` and that you are currently in a folder that you want all the results in.
 ```
 export SCRIPTS_DIR="somewhere"
