@@ -36,8 +36,9 @@ params.post_CDR3_motifs = ['[ATG][GC][ATGC]GC.*?TGGGG[GC]C[GCA][AG]',
                           ] 
                          
 
-params.length_file_offset = 27
-
+params.CDR3_lengths_offset = 27
+params.productive_sequences_offset = 9
+params.translation_frame = [1]
 
 include { FASTQC as fastqc_pre_fastp } from './processes'
 include { FASTQC as fastqc_post_fastp } from './processes'
@@ -54,6 +55,9 @@ include { RELABEL_SEQUENCES as label_IgM_motif1_reads } from './processes'
 include { RELABEL_SEQUENCES as label_IgM_motif2_reads } from './processes'
 include { RELABEL_SEQUENCES as label_both_IgM_motifs_reads } from './processes'
 
+include { RELABEL_SEQUENCES as clean_up_extracted_pre_CDR3_motif_headers } from './processes'
+include { RELABEL_SEQUENCES as clean_up_extracted_post_CDR3_motif_headers } from './processes'
+
 include { RELABEL_SEQUENCES as label_pre_CDR3_sequences } from './processes'
 include { RELABEL_SEQUENCES as label_post_CDR3_sequences } from './processes'
 
@@ -62,6 +66,8 @@ include { FILTER_SEQUENCES as get_reverse_primer_reads } from './processes'
 
 include { FILTER_SEQUENCES as get_IgM_motif1_reads } from './processes'
 include { FILTER_SEQUENCES as get_IgM_motif2_reads } from './processes'
+
+include { FILTER_SEQUENCES as get_productive_sequences } from './processes'
 
 include { REVERSE_COMPLEMENT_SEQUENCES as reverse_compliment_reverse_primer_reads } from './processes'
 
@@ -79,8 +85,12 @@ include { EXTRACT_MATCHES as extract_pre_CDR3_sequences } from './processes'
 include { LOCATE_REGEX_MATCHES as get_post_CDR3_locations } from './processes'
 include { EXTRACT_MATCHES as extract_post_CDR3_sequences } from './processes'
 
-include { EXTRACT_LENGTHS_FROM_BED_FILE as pre_and_post_CDR3_match_lengths } from './processes'
+include { LOCATE_REGEX_MATCHES as convert_productive_sequences_to_bed_file } from './processes'
 
+include { EXTRACT_LENGTHS_FROM_BED_FILE as pre_and_post_CDR3_match_lengths } from './processes'
+include { EXTRACT_LENGTHS_FROM_BED_FILE as productive_sequence_lengths } from './processes'
+
+include { TRANSLATE_TO_AA_SEQUENCE as translate_pre_and_post_CDR3_sequences } from './processes'
 
                          
 workflow {
@@ -101,8 +111,8 @@ workflow {
     reads_with_IgM_motif1 = get_IgM_motif1_reads(labeled_reads_with_forward_primer, params.IgM_motif1, params.IgM_motif1_num_mismatches, false, 'dont_save.gz')
     reads_with_IgM_motif2 = get_IgM_motif2_reads(labeled_reads_with_forward_primer, params.IgM_motif2, params.IgM_motif2_num_mismatches, false, 'dont_save.gz')
     
-    labeled_reads_with_IgM_motif1 = label_IgM_motif1_reads(reads_with_IgM_motif1, '(.*)', '$1\thas_IgM_motif1', 'dont_save-5')
-    labeled_reads_with_IgM_motif2 = label_IgM_motif2_reads(reads_with_IgM_motif2, '(.*)', '$1\thas_IgM_motif2', 'dont_save-6')
+    labeled_reads_with_IgM_motif1 = label_IgM_motif1_reads(reads_with_IgM_motif1, '(.*)', '$1\thas_IgM_motif1', 'dont_save.gz')
+    labeled_reads_with_IgM_motif2 = label_IgM_motif2_reads(reads_with_IgM_motif2, '(.*)', '$1\thas_IgM_motif2', 'dont_save.gz')
     
     
     reads_with_both_IgM_motifs         = get_reads_with_both_IgM_motifs(reads_with_IgM_motif1, reads_with_IgM_motif2, false)
@@ -116,19 +126,28 @@ workflow {
     merged_forward_reverse_primer_reads = merge_forward_reverse_primer_reads( cleaned_all_IgM_motif_reads.collect() + labeled_reverse_complimented_reads_with_reverse_primer.collect() )
     
     
-    pre_CDR3_locations                           = get_pre_CDR3_locations(merged_forward_reverse_primer_reads, params.pre_CDR3_motifs, true)
+    pre_CDR3_locations                           = get_pre_CDR3_locations(merged_forward_reverse_primer_reads, params.pre_CDR3_motifs)
     pre_CDR3_sequences                           = extract_pre_CDR3_sequences(merged_forward_reverse_primer_reads, pre_CDR3_locations, 'dont_save.gz')
-    pre_CDR3_sequnces_duplicates_removed         = remove_duplicate_pre_CDR3_sequences( pre_CDR3_sequences, false, 'dont_save.gz' )
+    pre_CDR3_sequences_with_cleaned_header       = clean_up_extracted_pre_CDR3_motif_headers(pre_CDR3_sequences, '(.*?)_.*', '$1', 'dont_save.gz')
+    
+    pre_CDR3_sequnces_duplicates_removed         = remove_duplicate_pre_CDR3_sequences( pre_CDR3_sequences_with_cleaned_header, false, 'dont_save.gz' )
     labeled_pre_CDR3_sequnces_duplicates_removed = label_pre_CDR3_sequences(pre_CDR3_sequnces_duplicates_removed, '(.*?):.*', '$1\textracted_pre_CDR3_motif', "${input_file_basename}-pre_CDR3_motif_sequences.fastq.gz")
 
 
-    post_CDR3_locations                           = get_post_CDR3_locations(pre_CDR3_sequnces_duplicates_removed, params.post_CDR3_motifs, true)
+    post_CDR3_locations                           = get_post_CDR3_locations(pre_CDR3_sequnces_duplicates_removed, params.post_CDR3_motifs)
     post_CDR3_sequences                           = extract_post_CDR3_sequences(pre_CDR3_sequnces_duplicates_removed, post_CDR3_locations, 'dont_save.gz')
-    post_CDR3_sequences_duplicates_removed         = remove_duplicate_post_CDR3_sequences( post_CDR3_sequences, false, 'dont_save.gz' )
+    post_CDR3_sequences_with_cleaned_header       = clean_up_extracted_post_CDR3_motif_headers(post_CDR3_sequences, '(.*?)_.*', '$1', 'dont_save.gz')
+    post_CDR3_sequences_duplicates_removed        = remove_duplicate_post_CDR3_sequences( post_CDR3_sequences_with_cleaned_header, false, 'dont_save.gz' )
     labeled_post_CDR3_sequnces_duplicates_removed = label_post_CDR3_sequences(post_CDR3_sequences_duplicates_removed, '(.*?):.*', '$1\thas_pre_CDR3_motif\textracted_pre_and_post_CDR3_motif', "${input_file_basename}-pre_and_post_CDR3_motifs_sequences.fastq.gz")
     
-    pre_and_post_CDR3_match_lengths( post_CDR3_locations, params.length_file_offset, "${input_file_basename}-CDR3_lengths.tsv" )
+    pre_and_post_CDR3_match_lengths( post_CDR3_locations, params.CDR3_lengths_offset, "${input_file_basename}-CDR3_lengths.tsv" )
+    
+    
+    translated_sequences = translate_pre_and_post_CDR3_sequences(post_CDR3_sequences_duplicates_removed, params.translation_frame)
+    productive_sequences = get_productive_sequences(translated_sequences, '*', 0, true, "${input_file_basename}-productive_sequences.faa.gz")
 
+    productive_sequences_bed_file = convert_productive_sequences_to_bed_file(productive_sequences, ['.*'])
+    productive_sequence_lengths(productive_sequences_bed_file, params.productive_sequences_offset, "${input_file_basename}-productive_sequences_lengths.tsv")
 }
 
 

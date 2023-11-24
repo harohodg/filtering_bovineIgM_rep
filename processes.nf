@@ -63,6 +63,7 @@ process RELABEL_SEQUENCES {
 process FILTER_SEQUENCES {
     module 'StdEnv/2020:seqkit/2.3.1'
     publishDir "${params.output_dir}/filtering", enabled: params.output_dir as boolean, mode: 'copy', overwrite: false, pattern: "*.fastq.gz"
+    publishDir "${params.output_dir}/filtering", enabled: params.output_dir as boolean, mode: 'copy', overwrite: false, pattern: "*.faa.gz"
     
     input:
         path input_file, stageAs: 'input_file.fastq.gz'
@@ -160,15 +161,13 @@ process LOCATE_REGEX_MATCHES {
     input:
         path input_file, stageAs: 'input_file.fastq.gz'
         val patterns
-        val positive_strand_only
     output:
         path 'matches.bed'
     
-    script:
-        def positive_strand_only_flag = positive_strand_only != false ? '--only-positive-strand' : ''
-        """
-        seqkit locate --hide-matched --bed ${positive_strand_only_flag} --use-regexp --pattern '${patterns.join('|')}' ${input_file} > matches.bed
-        """
+    shell:
+        '''
+        seqkit locate --hide-matched --bed --only-positive-strand --use-regexp --pattern '!{patterns.join('|')}' !{input_file} > matches.bed
+        '''
     
 }
 
@@ -204,7 +203,25 @@ process EXTRACT_LENGTHS_FROM_BED_FILE {
     
     shell:
         '''
-            awk 'BEGIN {OFS="\t";print "read","match_length","match_length-!{offset}"} {print $1,$3-$2+1, $3-$2+1-!{offset} }' !{bed_file} > !{output_file}
+        awk 'BEGIN {OFS="\t";print "read","match_length","match_length-!{offset}"} {print $1,$3-$2, $3-$2-!{offset} }' !{bed_file} > !{output_file}
         '''
 }
+
+process TRANSLATE_TO_AA_SEQUENCE {
+    module 'StdEnv/2020:seqkit/2.3.1'
+    
+    input:
+        path input_file, stageAs: 'input_file.fastq.gz'
+        val frames
+    output:
+        path 'translated_sequences.faa.gz'    
+    
+    script:
+        """
+        seqkit translate --append-frame --frame ${frames.join(',')} ${input_file} --out-file 'translated_sequences.faa.gz'
+        """    
+}
+
+
+
 
