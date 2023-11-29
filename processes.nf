@@ -18,7 +18,7 @@ process FASTQC {
 
 
 process FASTP {
-    module 'StdEnv/2020:fastp/0.23.4'
+    module 'StdEnv/2020:fastp/0.23.1'
     publishDir "${params.output_dir}/fastp", enabled: params.output_dir as boolean, mode: 'copy', overwrite: false, pattern: "*.fastq.gz"
     publishDir "${params.output_dir}/fastp", enabled: params.output_dir as boolean, mode: 'copy', overwrite: false, pattern: "*.json"
     publishDir "${params.output_dir}/fastp", enabled: params.output_dir as boolean, mode: 'copy', overwrite: false, pattern: "*.html"
@@ -35,7 +35,7 @@ process FASTP {
        
     shell:
         '''
-            fastp --thread $(nproc) --dedup --length_required !{min_length} --length_limit !{max_length} --json !{output_prefix}-fastp_report.json --html !{output_prefix}-fastp-report.html  --in1 !{input_file} --failed_out !{output_prefix}-fastp_failed.fastq.gz -o !{output_prefix}-trimmed.fastq.gz
+            fastp --thread $(nproc) --dedup --disable_adapter_trimming --length_required !{min_length} --length_limit !{max_length} --json !{output_prefix}-fastp_report.json --html !{output_prefix}-fastp-report.html  --in1 !{input_file} --failed_out !{output_prefix}-fastp_failed.fastq.gz -o !{output_prefix}-trimmed.fastq.gz
         '''   
        
 }
@@ -166,7 +166,7 @@ process LOCATE_REGEX_MATCHES {
     
     shell:
         '''
-        seqkit locate --hide-matched --bed --only-positive-strand --use-regexp --pattern '!{patterns.join('|')}' !{input_file} > matches.bed
+        seqkit locate --bed --only-positive-strand --use-regexp --pattern '!{patterns.join('|')}' !{input_file} > matches.bed
         '''
     
 }
@@ -191,11 +191,12 @@ process EXTRACT_MATCHES {
 
 }
 
-process EXTRACT_LENGTHS_FROM_BED_FILE {
+process GET_MATCH_LENGTHS {
+    module 'StdEnv/2020:bioawk/1.0'
     publishDir "${params.output_dir}/filtering", enabled: params.output_dir as boolean, mode: 'copy', overwrite: false, pattern: "*.tsv"
     
     input:
-        path bed_file
+        path input_file
         val offset
         val output_file
     output:
@@ -203,7 +204,7 @@ process EXTRACT_LENGTHS_FROM_BED_FILE {
     
     shell:
         '''
-        awk 'BEGIN {OFS="\t";print "read","match_length","match_length-!{offset}"} {print $1,$3-$2, $3-$2-!{offset} }' !{bed_file} > !{output_file}
+        bioawk -c fastx 'BEGIN {OFS="\t";print "read","match_length","match_length-!{offset}","sequence"} {print $name,length($seq), length($seq)-!{offset},$seq }' !{input_file} > !{output_file}
         '''
 }
 
