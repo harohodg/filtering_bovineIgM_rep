@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 
 
 params.input_folder = ""
-params.output_dir  = ""
+params.output_dir   = ""
 
 params.min_read_length = 700
 params.max_read_length = 1200

@@ -35,7 +35,9 @@ process FASTP {
         
         
     output:
-        tuple val(output_file_suffix), path("${ output_file_suffix }-fastp_filtered.fastq.gz"), path("${ output_file_suffix }-fastp_failed.fastq.gz")
+        tuple val(output_file_suffix), path("${ output_file_suffix }-fastp_filtered.fastq.gz"), path("${ output_file_suffix }-fastp_failed.fastq.gz"), emit: results
+        path "*.html", emit: html_file
+        path "*.json", emit: json_file
        
     script:
         def dedup_flag      = dedup != false ? "--dedup" : ''

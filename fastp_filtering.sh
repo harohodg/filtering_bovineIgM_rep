@@ -83,14 +83,15 @@ max_read_length=${max_read_length:-$DEFAULT_MAX_LENGTH}
 deduplication_flag=${deduplicate:+'--deduplicate_reads yes'}
 
 module_load='module load StdEnv/2020 nextflow/23.04.3'
-command="${module_load} && mkdir -p ${tmp_output_folder} && NXF_WORK=${nextflow_temp_folder} nextflow run -pool-size "'$SLURM_CPUS_ON_NODE'" -resume ${SCRIPT_DIR}/fastp_filtering.nf --input_folder ${input_folder}  --output_dir ${tmp_output_folder} --min_read_length ${min_read_length} --max_read_length ${max_read_length} ${deduplication_flag} && mv ${tmp_output_folder} ${output_folder} && rm -r ${nextflow_temp_folder}"
+command="${module_load} && mkdir -p ${tmp_output_folder} && NXF_WORK=${nextflow_temp_folder} nextflow run -pool-size "'$SLURM_CPUS_ON_NODE'" -resume ${SCRIPT_DIR}/fastp_filtering.nf --input_folder ${input_folder}  --output_dir ${tmp_output_folder} --min_read_length ${min_read_length} --max_read_length ${max_read_length} ${deduplication_flag} && mv ${tmp_output_folder} ${output_folder}"
 
 if [ -n "$debug" ];then
     echo "$command"
 else  
-    echo
-    echo "${command}" >&2
-    echo '-------------------'
+    echo                       >&2
+    echo "${command}"          >&2
+    echo                       >&2
+    echo '-------------------' >&2
     echo
     
     eval "$command" && echo -n 'DONE' >&2  || echo -n 'FAILED' >&2

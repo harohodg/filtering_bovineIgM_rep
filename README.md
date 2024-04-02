@@ -1,7 +1,33 @@
 ### Nextflow workflows for characterizing bovine immunological nanopore sequencing data
-This workflow has been tested on [Graham](https://docs.alliancecan.ca/wiki/Graham) but should work on any of the other [Digital Research Alliance of Canada](https://alliancecan.ca/en) systems. With a bit of editing these scripts should be able to run on any system with [Nextflow](https://www.nextflow.io/docs/latest/index.html) and [Fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Fastp](https://github.com/OpenGene/fastp) and [Seqkit](https://bioinf.shenwei.m) installed. 
+This workflow has been tested on [Narval](https://docs.alliancecan.ca/wiki/Narval) but should work on any of the other [Digital Research Alliance of Canada](https://alliancecan.ca/en) systems. With a bit of editing these scripts should be able to run on any system with [Nextflow](https://www.nextflow.io/docs/latest/index.html), [Fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Fastp](https://github.com/OpenGene/fastp), [Seqkit](https://bioinf.shenwei.m), and [Bioawk](https://github.com/lh3/bioawk) installed. 
 
-1. Check quality and trim sequences using Fastqc and Fastp
+### Running the pipeline with no changes.
+
+
+#### Running the pipeline steps individually
+Assuming you have launched an interactive job with 8cpu cores and 4G of RAM per cpu
+
+1. Run fastp
+- To run with standard length parameters and no deduplication
+`bash fastp_filtering.sh <path/to/folder/with/bc*.fastq.gz/files> <output_folder>`
+
+- To run with standard length parameters and deduplication
+`bash fastp_filtering.sh -D <path/to/folder/with/bc*.fastq.gz/files> <output_folder>`
+
+This will create `<output_folder>/bc*/bc*-fastp` which contains 
+```
+bc*-fastp_failed.fastq.gz
+bc*-fastp_filtered.fastq.gz
+bc01-fastp-report.html
+bc01-fastp_report.json
+```
+
+
+This will create a folder called `something or other` in the current folder and launch a set of [meta-farm](https://docs.alliancecan.ca/wiki/META-Farm) jobs. When finished  
+
+When done there will be a collection of folders inside `path/to/output/folder` (one per sample) with the following sub-folder structure.
+
+Check quality and trim sequences using Fastqc and Fastp
 Assuming you've put the basecalled files in `~/projects/${SLURM_ACCOUNT}/bovine_nanopore_data` and that you are currently in a folder that you want all the results in.
 ```
 export SCRIPTS_DIR="somewhere"
