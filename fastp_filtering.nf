@@ -11,7 +11,7 @@ params.max_read_length = 1200
 
 params.deduplicate_reads = ''
 
-include { FASTP as fastp } from './processes'
+include { FASTP as fastp } from './modules/processes'
                          
 workflow {
     input_files = Channel.fromPath("${params.input_folder}/bc*.fastq.gz",type: 'file').map{ tuple(it, it.getBaseName(2).split('-')[0]) }
