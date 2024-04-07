@@ -76,6 +76,6 @@ else
     echo '-------------------' >&2
     echo
     
-    eval "$command" && echo -n 'DONE' >&2  || echo -n 'FAILED' >&2
+    eval "$command" && echo 'DONE' >&2  || echo 'FAILED' >&2
 fi
 

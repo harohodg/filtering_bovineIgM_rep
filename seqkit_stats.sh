@@ -1,11 +1,13 @@
 #!/bin/bash
-#SBATCH -t 1:00:00
+#SBATCH -t 0:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=2G
 
-#Script for running entire filtering pipeline with default parameters on Digital Research Alliance Infrastructure.
+#Script for running fastp on all *.fastq.gz files in an input folder on Digital Research Alliance Infrastructure.
+#Puts results in output_folder/<file_basename>/<file_basename-fastp>
+#Tested on Narval.
 #Has not been benchmarked yet. Does not check for pre-existing output folder
 
 #Author : Harold Hodgins <hhodgins@uwaterloo.ca>
@@ -18,12 +20,12 @@
 VERSION='1.0.0'
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
->&2 echo "run_pipeline.sh version $VERSION"
+>&2 echo "seqkit_stats.sh version $VERSION"
 
 # Echo usage if something isn't right.
 usage() { 
-    echo "Usage: $0 [-d] <input_folder> <output_folder>" 1>&2; 
-    echo "Use -d to print what would have been run but not actually run it" 1>&2;
+    echo "Usage: $0 [-d]  <input_folder> <output_folder>" 1>&2; 
+    echo "Use -d to print what would have been run but not actually run it" 1>&2
     echo "Should not be run on a login node."     1>&2;
     exit 1; 
 }
@@ -54,15 +56,10 @@ else
     output_folder=$(realpath --canonicalize-missing "$2")
 fi
 tmp_output_folder=${output_folder}.partial
+nextflow_temp_folder=${output_folder}-nextflow_scratch
 
-command1="module load StdEnv/2020 && mkdir -p ${tmp_output_folder} && chmod +x ${SCRIPT_DIR}/fastp_filtering.sh ${SCRIPT_DIR}/IgM_filtering.sh ${SCRIPT_DIR}/fastqc.sh"
-command2="${SCRIPT_DIR}/fastp_filtering.sh -D ${input_folder} ${tmp_output_folder}/fastp-filtered"
-command3="${SCRIPT_DIR}/IgM_filtering.sh  ${tmp_output_folder}/fastp-filtered ${tmp_output_folder}/IgM-filtered"
-command4="${SCRIPT_DIR}/fastqc.sh ${tmp_output_folder} ${tmp_output_folder}/fastqc_data"
-command5="${SCRIPT_DIR}/seqkit_stats.sh ${tmp_output_folder} ${tmp_output_folder}/sequence_stats"
-command6="mv ${tmp_output_folder} ${output_folder}"
-
-command="${command1} && ${command2} && ${command3} && ${command4} && ${command5} && ${command6}"
+module_load='module load StdEnv/2020 nextflow/23.04.3'
+command="${module_load} && mkdir -p ${tmp_output_folder} && NXF_WORK=${nextflow_temp_folder} nextflow run -pool-size "'$SLURM_CPUS_ON_NODE'" -resume ${SCRIPT_DIR}/seqkit_stats.nf --input_folder ${input_folder}  --output_dir ${tmp_output_folder} && mv ${tmp_output_folder} ${output_folder} && rm -r ${nextflow_temp_folder}"
 
 if [ -n "$debug" ];then
     echo "$command"

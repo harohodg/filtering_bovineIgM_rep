@@ -296,6 +296,21 @@ process TRANSLATE_TO_AA_SEQUENCE {
         """    
 }
 
-
+process SEQUENCE_STATS {
+    cpus 4
+    memory {1.GB * task.cpus}
+    
+    module 'StdEnv/2020:seqkit/2.3.1'
+    
+    input:
+        path input_file
+    output:
+        path 'stats.tsv'
+    
+    script:
+        """
+        seqkit stats --threads ${task.cpus} ${input_file} --out-file stats.tsv
+        """    
+}
 
 

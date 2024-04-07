@@ -5,9 +5,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=2G
 
-#Script for running fastp on all *.fastq.gz files in an input folder on Digital Research Alliance Infrastructure.
-#Puts results in output_folder/<file_basename>/<file_basename-fastp>
-#Tested on Narval.
+#Script for running fastqc on all *.fastq.gz files in an input folder on Digital Research Alliance Infrastructure.
 #Has not been benchmarked yet. Does not check for pre-existing output folder
 
 #Author : Harold Hodgins <hhodgins@uwaterloo.ca>
@@ -70,6 +68,6 @@ else
     echo '-------------------' >&2
     echo
     
-    eval "$command" && echo -n 'DONE' >&2  || echo -n 'FAILED' >&2
+    eval "$command" && echo 'DONE' >&2  || echo 'FAILED' >&2
 fi
 
