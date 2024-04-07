@@ -61,14 +61,6 @@ workflow IgM_motifs_filtering {
         labeled_reads_with_both_motifs = label_reads_with_both_IgM_motifs(reads_with_both_motifs, '(.*)', '$1\thas_both_IgM_motifs', ['discard', 'have_both_IgM_motifs.fastq.gz'] )
         labeled_reads_with_no_motif    = label_reads_with_no_IgM_motif(reads_with_no_motif, '(.*)', '$1\thas_no_IgM_motif', ['discard', 'no_IgM_motifs.fastq.gz'] )
 
-
-        reads_with_motif1_no_motif2 = get_reads_with_motif1_no_motif2(  labeled_reads_with_both_motifs.combine(reads_with_IgM_motif1, by: 0), '.*has_both_IgM_motifs', true, ['', 'dont_save.gz']  )
-        reads_with_motif2_no_motif1 = get_reads_with_motif2_no_motif1( labeled_reads_with_both_motifs.combine(reads_with_IgM_motif2, by: 0), '.*has_both_IgM_motifs', true, ['', 'dont_save.gz'] )
-        
-        
-        labeled_reads_with_motif1_no_motif2 = label_reads_with_motif1_no_motif2(reads_with_motif1_no_motif2, '(.*)', '$1\thas_motif1_no_motif2', ['discard', 'has_IgM_motif1_no_motif2.fastq.gz'] )
-        labeled_reads_with_motif2_no_motif1 = label_reads_with_motif2_no_motif1(reads_with_motif2_no_motif1, '(.*)', '$1\thas_motif2_no_motif1', ['discard', 'has_IgM_motif2_no_motif1.fastq.gz'] )
- 
         all_IgM_motif_reads = labeled_reads_with_both_motifs.combine( labeled_reads_with_IgM_motif1, by: 0).combine( labeled_reads_with_IgM_motif2, by: 0).map{ tuple( it[0], tuple(it[1], it[2], it[3]) ) }
         
         filtered_IgM_motif_reads = concat_IgM_motif_reads( all_IgM_motif_reads )

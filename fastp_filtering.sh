@@ -7,7 +7,6 @@
 
 #Script for running fastp on all *.fastq.gz files in an input folder on Digital Research Alliance Infrastructure.
 #Puts results in output_folder/<file_basename>/<file_basename-fastp>
-#Tested on Narval.
 #Has not been benchmarked yet. Does not check for pre-existing output folder
 
 #Author : Harold Hodgins <hhodgins@uwaterloo.ca>
@@ -83,7 +82,7 @@ max_read_length=${max_read_length:-$DEFAULT_MAX_LENGTH}
 deduplication_flag=${deduplicate:+'--deduplicate_reads yes'}
 
 module_load='module load StdEnv/2020 nextflow/23.04.3'
-command="${module_load} && mkdir -p ${tmp_output_folder} && NXF_WORK=${nextflow_temp_folder} nextflow run -pool-size "'$SLURM_CPUS_ON_NODE'" -resume ${SCRIPT_DIR}/fastp_filtering.nf --input_folder ${input_folder}  --output_dir ${tmp_output_folder} --min_read_length ${min_read_length} --max_read_length ${max_read_length} ${deduplication_flag} && mv ${tmp_output_folder} ${output_folder}"
+command="${module_load} && mkdir -p ${tmp_output_folder} && NXF_WORK=${nextflow_temp_folder} nextflow run -pool-size "'$SLURM_CPUS_ON_NODE'" -resume ${SCRIPT_DIR}/fastp_filtering.nf --input_folder ${input_folder}  --output_dir ${tmp_output_folder} --min_read_length ${min_read_length} --max_read_length ${max_read_length} ${deduplication_flag} && mv ${tmp_output_folder} ${output_folder} && rm -r ${nextflow_temp_folder}"
 
 if [ -n "$debug" ];then
     echo "$command"

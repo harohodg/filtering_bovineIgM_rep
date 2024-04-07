@@ -1,12 +1,12 @@
 process FASTQC {
-    memory '2 GB'
     cpus 2
+    memory {1.GB * task.cpus}
     module 'StdEnv/2020:fastqc/0.11.9'
-    publishDir "${params.output_dir}/fastqc/${task.process}", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.html"
-    publishDir "${params.output_dir}/fastqc/${task.process}", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.zip"
+    publishDir "${params.output_dir}/${sub_folder}-fastqc/${output_file_prefix}", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.html"
+    publishDir "${params.output_dir}/${sub_folder}-fastqc/${output_file_prefix}", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.zip"
     
     input:
-        path input_file
+        tuple path(input_file), val(sub_folder), val(output_file_prefix)
     output:
         path "*.html"
         path "*.zip"

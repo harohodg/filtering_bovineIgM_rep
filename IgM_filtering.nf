@@ -51,7 +51,7 @@ include { calculate_CDR3_lengths }      from './subworkflows/calculate_CDR3_leng
 include { productive_sequences }        from './subworkflows/productive_sequences'
                          
 workflow {
-    input_files = Channel.fromPath("${params.input_folder}/**/bc*-${params.filter}.fastq.gz",type: 'file').map{ tuple("${it.getBaseName(2).split('-')[0]}-${params.filter}", it)  }
+    input_files = Channel.fromPath("${params.input_folder}/**bc*-${params.filter}.fastq.gz",type: 'file').map{ tuple("${it.getBaseName(2).split('-')[0]}-${params.filter}", it)  }
 
     relabeled_sequences = simplify_read_labels(input_files, '(.*?)\s.*', '$1', ['', 'dont_save.gz'] )
     primer_filtering( relabeled_sequences, params.forward_primer, params.reverse_primer, params.forward_primer_num_mismatches, params.reverse_primer_num_mismatches )
