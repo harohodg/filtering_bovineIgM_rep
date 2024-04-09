@@ -2,7 +2,7 @@
 #SBATCH -t 1:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=2G
 
 #Script for running entire filtering pipeline with default parameters on Digital Research Alliance Infrastructure.
