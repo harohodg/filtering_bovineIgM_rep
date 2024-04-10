@@ -15,13 +15,17 @@
 #History:
 #    Version 1.0 : April 07, 2024
 #        - functional code with minimal error checking
+#    Version 1.0.1 : April 10, 2024
+#        - fixed bug with how SCRIPT DIR was calculated
 
+VERSION='1.0.1'
 
-VERSION='1.0.0'
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 if [ -n "${SLURM_JOB_ID:-}" ] ; then
-    SCRIPT_DIR=$(dirname $(scontrol show job "$SLURM_JOB_ID" | awk -F= '/Command=/{print $2}') )
-else
-    SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+    command_run=$(scontrol show job "$SLURM_JOB_ID" | awk -F= '/Command=/{print $2}')
+    if [ "$command_run" != "/bin/sh" ]; then
+        SCRIPT_DIR=$(dirname "${command_run}" )
+    fi
 fi
 
 >&2 echo "seqkit_stats.sh version $VERSION"

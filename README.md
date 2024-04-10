@@ -14,7 +14,8 @@ Then fastqc, and seqkit stats is run on every *.fastq.gz file under path/to/outp
 
 ### Manually running each step
 The nextflow workflows take an input folder and an output folder. All samples are automatically
-placed in a subfolder under the output folder
+placed in a subfolder under the output folder.
+
 
 1. Fastp filtering
 #### Default length filters, deduplication enabled
