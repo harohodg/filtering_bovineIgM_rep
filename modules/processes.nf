@@ -23,9 +23,9 @@ process FASTP {
     cpus 4
     memory {2.GB * task.cpus}
     module 'StdEnv/2020:fastp/0.23.1'
-    publishDir "${params.output_dir}/${ output_file_prefix }/${ output_file_prefix }-fastp", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
-    publishDir "${params.output_dir}/${ output_file_prefix }/${ output_file_prefix }-fastp", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.json"
-    publishDir "${params.output_dir}/${ output_file_prefix }/${ output_file_prefix }-fastp", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.html"
+    publishDir "${params.output_dir}/${ output_file_prefix }-fastp", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
+    publishDir "${params.output_dir}/${ output_file_prefix }-fastp", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.json"
+    publishDir "${params.output_dir}/${ output_file_prefix }-fastp", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.html"
     
     input:
         tuple path(input_file), val(output_file_prefix)
@@ -60,7 +60,7 @@ process RELABEL_SEQUENCES {
     memory {2.GB * task.cpus}
     
     module 'StdEnv/2020:seqkit/2.3.1'
-    publishDir "${params.output_dir}/${ output_file_prefix }/${output_sub_folder}", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
+    publishDir "${params.output_dir}/${ output_file_prefix }-IgM/${output_sub_folder}", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
     
     input:
         tuple val(output_file_prefix), path(input_file, stageAs: 'input_file.fastq.gz')
@@ -84,8 +84,8 @@ process FILTER_SEQUENCES {
     memory {2.GB * task.cpus}
     
     module 'StdEnv/2020:seqkit/2.3.1'
-    publishDir "${params.output_dir}/${ output_file_prefix }/${output_sub_folder}", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
-    publishDir "${params.output_dir}/${ output_file_prefix }/${output_sub_folder}", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.faa.gz"
+    publishDir "${params.output_dir}/${ output_file_prefix }-IgM/${output_sub_folder}", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
+    publishDir "${params.output_dir}/${ output_file_prefix }-IgM/${output_sub_folder}", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.faa.gz"
     
     input:
         tuple val(output_file_prefix), path(input_file, stageAs: 'input_file.fastq.gz')
@@ -153,7 +153,7 @@ process REMOVE_OVERLAPPING_SEQUENCES {
     memory {2.GB * task.cpus}
     
     module 'StdEnv/2020:seqkit/2.3.1'
-    publishDir "${params.output_dir}/${ output_file_prefix }/${ output_sub_folder }", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
+    publishDir "${params.output_dir}/${ output_file_prefix }-IgM/${ output_sub_folder }", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
     
     input:
         tuple val(output_file_prefix), path(input_file1, stageAs: 'input_file1.fastq.gz'), path(input_file2, stageAs: 'input_file2.fastq.gz')
@@ -195,7 +195,7 @@ process REMOVE_DUPLICATE_SEQUENCES {
     memory {2.GB * task.cpus}
     
     module 'StdEnv/2020:seqkit/2.3.1'
-    publishDir "${params.output_dir}/${ output_file_prefix }/${ output_sub_folder }", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
+    publishDir "${params.output_dir}/${ output_file_prefix }-IgM/${ output_sub_folder }", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
     
     input:
         tuple val(output_file_prefix), path(input_file, stageAs: 'input_file.fastq.gz')
@@ -239,7 +239,7 @@ process EXTRACT_MATCHES {
     memory {2.GB * task.cpus}
     
     module 'StdEnv/2020:seqkit/2.3.1'
-    publishDir "${params.output_dir}/${ output_file_prefix }/${ output_sub_folder }", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
+    publishDir "${params.output_dir}/${ output_file_prefix }-IgM/${ output_sub_folder }", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
     
     input:
         tuple val(output_file_prefix), path(input_file, stageAs: 'input_file.fastq.gz'), path(bed_file, stageAs: 'bed_file.bed')
@@ -261,7 +261,7 @@ process GET_MATCH_LENGTHS {
     memory {2.GB * task.cpus}
     
     module 'StdEnv/2020:bioawk/1.0'
-    publishDir "${params.output_dir}/${ output_file_prefix }/${ output_sub_folder }", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.fastq.gz"
+    publishDir "${params.output_dir}/${ output_file_prefix }-IgM/${ output_sub_folder }", enabled: params.output_dir as boolean, mode: 'copy', overwrite: true, pattern: "*.tsv"
     
     input:
         tuple val(output_file_prefix), path(input_file, stageAs: 'input_file.fastq.gz')

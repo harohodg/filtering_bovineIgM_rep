@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -t 1:00:00
+#SBATCH -t 1:15:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16

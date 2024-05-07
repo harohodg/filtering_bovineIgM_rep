@@ -13,6 +13,7 @@ Then fastqc, and seqkit stats is run on every *.fastq.gz file under path/to/outp
 
 
 ### Manually running each step
+These steps should be run in an interactive job.
 The nextflow workflows take an input folder and an output folder. All samples are automatically
 placed in a subfolder under the output folder.
 
