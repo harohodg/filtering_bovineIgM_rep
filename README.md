@@ -1,39 +1,58 @@
-### Nextflow workflows for characterizing bovine immunological nanopore sequencing data
-This workflow has been tested on [Graham](https://docs.alliancecan.ca/wiki/Graham) but should work on any of the other [Digital Research Alliance of Canada](https://alliancecan.ca/en) systems. With a bit of editing these scripts should be able to run on any system with [Nextflow](https://www.nextflow.io/docs/latest/index.html) and [Fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Fastp](https://github.com/OpenGene/fastp) and [Seqkit](https://bioinf.shenwei.m) installed. 
+# Nextflow workflows for characterizing bovine immunological nanopore sequencing data
+This workflow has been tested on [Narval](https://docs.alliancecan.ca/wiki/Narval) but should work on any of the other [Digital Research Alliance of Canada](https://alliancecan.ca/en) systems. With a bit of editing these scripts should be able to run on any system with [Nextflow](https://www.nextflow.io/docs/latest/index.html), [Fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [Fastp](https://github.com/OpenGene/fastp), [Seqkit](https://bioinf.shenwei.m), and [Bioawk](https://github.com/lh3/bioawk) installed. 
 
-1. Check quality and trim sequences using Fastqc and Fastp
-Assuming you've put the basecalled files in `~/projects/${SLURM_ACCOUNT}/bovine_nanopore_data` and that you are currently in a folder that you want all the results in.
-```
-export SCRIPTS_DIR="somewhere"
+### Running the pipeline with default parameters.
+`sbatch --output pipeline_run-%j.out path/to/run_pipeline.sh path/to/base/called/files/folder path/to/output/folder`
 
-module load meta-farm/1.0.2
+This will run fastp with deduplication enabled and the default read length filters on ever bc*.fastq.gz file
+in `path/to/base/called/files/folder` followed by IgM filtering for every `fastp-filtered` file in `path/to/output/folder/fastp-filtered` 
 
-farm_init.run fastqc_fastp-farm
-
-find ~/projects/${SLURM_ACCOUNT}/bovine_nanopore_data -name '*.fastq.gz' | parallel --dry-run 'NXF_WORK=$SLURM_TMPDIR/work nextflow run '${SCRIPTS_DIR}'/fastqc_and_fastp.nf --input_file {}  --output_dir '$(pwd)/'$(echo "{/.}" | sed "s/.fastq//")_results' > fastqc_fastp-farm/table.dat
-
-eval cp ${SCRIPTS_DIR}/fastqc_and_fastp-job_script.sh fastqc_fastp-farm/job_script.sh
-eval cp ${SCRIPTS_DIR}/single_case.sh fastqc_fastp-farm/single_case.sh
-
-cd fastqc_fastp-farm && submit.run 4
-```
+Then fastqc, and seqkit stats is run on every *.fastq.gz file under path/to/output/folder and the results put in 
+`path/to/output/folder/fastqc_data` and `path/to/output/folder/sequence_stats` respectively.
 
 
 
-2. Run filtering pipeline on each fastp trimmed file.
-Same assumptions as before.
-```
-cd ..
-farm_init.run IgM_filtering-farm
-
-find bc*/fastp -name 'bc*trimmed.fastq.gz' | parallel --dry-run 'NXF_WORK=$SLURM_TMPDIR/work nextflow run '${SCRIPTS_DIR}'/IgM_filtering.nf --input_file '$(pwd)'/{}  --output_dir '$(pwd)/'$(echo "{/.}" | sed "s/-trimmed.fastq//")_results' > IgM_filtering-farm/table.dat
-
-eval cp ${SCRIPTS_DIR}/IgM_filtering-job_script.sh IgM_filtering-farm/job_script.sh
-eval cp ${SCRIPTS_DIR}/single_case.sh IgM_filtering-farm/single_case.sh
-
-cd IgM_filtering-farm && submit.run 4 
-```
+### Manually running each step
+These steps should be run in an interactive job.
+The nextflow workflows take an input folder and an output folder. All samples are automatically
+placed in a subfolder under the output folder.
 
 
-Use query.run inside fastqc_fastp-farm to check on overall jobs status
-If you have a choice of which def-account_name to use when you submit jobs you can over ride the default one for the meta-farms by submitting with `submit.run 4 '--account def-other_account'`
+1. Fastp filtering
+#### Default length filters, deduplication enabled
+`fastp_filtering.sh -D base_called_files_folder results/fastp-filtered_folder`
+
+#### Default length filters, no deduplication
+`fastp_filtering.sh base_called_files_folder results/fastp-filtered_folder`
+
+#### default minimum read length filter, no max length filter, no deduplication
+`fastp_filtering.sh -M 0 base_called_files_folder results/fastp-filtered_folder`
+
+#### default maximum read length filter, no min length filter, no deduplication
+`fastp_filtering.sh -m 0 base_called_files_folder results/fastp-filtered_folder`
+
+#### no min or max read length filter, no deduplication
+`fastp_filtering.sh -m 0 -M 0 base_called_files_folder fastp-filtered_folder`
+
+
+2. IgM filtering
+The IgM filtering script takes an input folder and an output folder. It then 
+runs all `bc*-<filter>.fastq.gz` through the pipeline and puts them in `ouput_folder/bc*-<filter>`
+
+#### Reads that passed fastp filtering step
+`IgM_filtering.sh fastp-filtered_folder path/to/output/folder/IgM-filtered`
+
+#### Reads that failed fastp filtering step
+`IgM_filtering.sh -f "fastp_failed" fastp-filtered_folder path/to/output/folder/IgM-filtered`
+
+To run a single file file through the IgM filtering
+`IgM_filtering.sh fastp-filtered_folder/bc## path/to/output/folder/IgM-filtered`
+
+
+3. Run fastqc on all fastq.gz files in the output folder
+`fastqc.sh path/to/output/folder path/to/output/folder/fastqc_data`
+
+
+4. Run seqkit stats on all fastq.gz files in the output folder
+`seqkit_stats.sh path/to/output/folder path/to/output/folder/sequence_stats`
+
